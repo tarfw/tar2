@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/auth';
+import { db } from '../../lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MagicAuthScreen() {
@@ -11,6 +12,14 @@ export default function MagicAuthScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { sendMagicCode, signInWithMagicCode } = useAuth();
+  const { user } = db.useAuth();
+
+  // If user is already authenticated, redirect to the main app
+  useEffect(() => {
+    if (user) {
+      router.replace('/(tabs)');
+    }
+  }, [user, router]);
 
   const handleSendMagicCode = async () => {
     if (!email) {
@@ -39,6 +48,7 @@ export default function MagicAuthScreen() {
     try {
       await signInWithMagicCode(email, code);
       // Navigation will be handled by InstantDB's SignedIn/SignedOut components
+      // But we also have the useEffect above as a backup
     } catch (error: any) {
       setCode('');
       Alert.alert('Error', error.body?.message || error.message || 'Failed to verify code');
@@ -63,6 +73,15 @@ export default function MagicAuthScreen() {
     setStep('email');
     setCode('');
   };
+
+  // If user is already authenticated, don't show the auth UI
+  if (user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Redirecting...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

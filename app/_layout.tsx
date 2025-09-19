@@ -14,7 +14,13 @@ export default function RootLayout() {
         </db.SignedIn>
         <db.SignedOut>
           <Stack>
-            <Stack.Screen name="auth/magic-auth" options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="auth/magic-auth" 
+              options={{ 
+                headerShown: false,
+                title: "Sign In"
+              }} 
+            />
             <Stack.Screen name="index" redirect={true} options={{ headerShown: false }} />
           </Stack>
         </db.SignedOut>
