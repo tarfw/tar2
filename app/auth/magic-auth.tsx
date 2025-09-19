@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MagicAuthScreen() {
   const [email, setEmail] = useState('');
@@ -64,7 +65,7 @@ export default function MagicAuthScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {step === 'email' ? (
         // Email input step
         <>
@@ -137,7 +138,7 @@ export default function MagicAuthScreen() {
           </TouchableOpacity>
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

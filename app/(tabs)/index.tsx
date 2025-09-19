@@ -1,39 +1,60 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useAuth } from '../../lib/auth';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { db } from '../../lib/db';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
-  const { signOut } = useAuth();
+export default function AgentsScreen() {
+  const router = useRouter();
   const { user } = db.useAuth();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error: any) {
-      Alert.alert('Error', error.body?.message || error.message || 'Failed to sign out');
-    }
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to your app!</Text>
-      <Text style={styles.subtitle}>You are successfully logged in.</Text>
-      {user && <Text style={styles.userText}>User Email: {user.email}</Text>}
+    <SafeAreaView style={styles.container}>
+      {/* Top bar with agents card */}
+      <View style={styles.topBar}>
+        <TouchableOpacity 
+          style={styles.agentsCard} 
+          onPress={() => router.push('/(tabs)/agents-list')}
+        >
+          <Text style={styles.agentsText}>agents</Text>
+        </TouchableOpacity>
+      </View>
       
-      <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-        <Text style={styles.buttonText}>Sign Out</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.content}>
+        <Text style={styles.title}>Welcome to your app!</Text>
+        <Text style={styles.subtitle}>You are successfully logged in.</Text>
+        {user && <Text style={styles.userText}>User Email: {user.email}</Text>}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  topBar: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  agentsCard: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  agentsText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 24,
@@ -52,17 +73,5 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     textAlign: 'center',
     color: '#888',
-  },
-  button: {
-    backgroundColor: '#FF3B30',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
