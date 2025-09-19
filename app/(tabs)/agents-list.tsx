@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../lib/auth';
 import { db } from '../../lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,16 +12,7 @@ const agentsData = [
 
 export default function AgentsList() {
   const router = useRouter();
-  const { signOut } = useAuth();
   const { user } = db.useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error: any) {
-      Alert.alert('Error', error.body?.message || error.message || 'Failed to sign out');
-    }
-  };
 
   const renderAgentItem = ({ item }: { item: { id: string; name: string; icon: string } }) => (
     <TouchableOpacity style={styles.agentItem}>
@@ -46,11 +36,6 @@ export default function AgentsList() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
       />
-      
-      {/* Sign out button at the bottom as hand emoji */}
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutEmoji}>👋</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -97,12 +82,5 @@ const styles = StyleSheet.create({
   agentName: {
     fontSize: 18,
     color: '#333',
-  },
-  signOutButton: {
-    alignSelf: 'center',
-    marginVertical: 30,
-  },
-  signOutEmoji: {
-    fontSize: 40,
   },
 });
