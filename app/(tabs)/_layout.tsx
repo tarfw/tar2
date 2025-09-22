@@ -1,15 +1,29 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useAuth } from "../../lib/auth";
-import { Redirect } from "expo-router";
+import { db } from "../../lib/db";
+import { useEffect, useState } from "react";
 
 export default function TabLayout() {
-  const { userProfile, requiresUsernameSetup } = useAuth();
+  const { isLoading, user } = db.useAuth();
+  const [initialLoad, setInitialLoad] = useState(true);
   
-  // If user needs to set up username, redirect to profile screen
-  if (userProfile && requiresUsernameSetup) {
-    return <Redirect href="/profile" />;
+  // Just wait for initial auth check
+  useEffect(() => {
+    if (!isLoading) {
+      setInitialLoad(false);
+    }
+  }, [isLoading]);
+  
+  // If still loading, show nothing
+  if (isLoading || initialLoad) {
+    return null;
+  }
+  
+  // If no user, this shouldn't happen since we would have been redirected already
+  // But just in case, we'll redirect to auth
+  if (!user) {
+    return null; // Let the root layout handle this
   }
   
   return (

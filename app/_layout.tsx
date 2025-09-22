@@ -1,60 +1,108 @@
 import { Stack } from "expo-router";
 import { db } from "../lib/db";
-import { AuthProvider, useAuth } from "../lib/auth";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { fetchProfileByUserId } from '../lib/profile';
 import Toast from 'react-native-toast-message';
 
-function RootLayoutContent() {
-  const { userProfile, loadingProfile, requiresUsernameSetup } = useAuth();
-  
-  // If we're still loading the profile, show nothing
-  if (loadingProfile) {
+export default function RootLayout() {
+  const { isLoading, user } = db.useAuth();
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  // Check profile status when user auth state changes
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (user?.id) {
+        try {
+          // Check if user has a profile
+          const profile = await fetchProfileByUserId(user.id);
+          setHasProfile(!!profile);
+        } catch (error) {
+          console.error('Error checking profile:', error);
+          setHasProfile(null);
+        }
+      } else {
+        setHasProfile(null);
+      }
+      
+      if (initialLoad) {
+        setInitialLoad(false);
+      }
+    };
+
+    checkProfile();
+  }, [user]);
+
+  // If we're still checking auth status, show nothing
+  if (isLoading || initialLoad) {
     return null;
   }
-  
-  // If user needs to set up username, redirect to profile screen
-  if (userProfile && requiresUsernameSetup) {
-    return (
-      <Stack>
-        <Stack.Screen name="profile" options={{ headerShown: false }} />
-        <Stack.Screen name="index" redirect={true} options={{ headerShown: false }} />
-      </Stack>
-    );
-  }
-  
-  // Regular signed in/out flow
+
   return (
-    <>
-      <db.SignedIn>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="profile" options={{ headerShown: false }} />
+    <SafeAreaProvider>
+      {user ? (
+        <Stack 
+          screenOptions={{
+            headerShown: false,
+            header: () => null
+          }}
+        >
+          {hasProfile === false ? (
+            // User authenticated but no profile - show onboarding
+            <Stack.Screen 
+              name="onboard" 
+              options={{ 
+                headerShown: false,
+                header: () => null,
+                title: "Set Username"
+              }} 
+            />
+          ) : (
+            // User authenticated with profile - show main app
+            <Stack.Screen 
+              name="(tabs)" 
+              options={{ 
+                headerShown: false,
+                header: () => null,
+                title: "Home"
+              }} 
+            />
+          )}
+          <Stack.Screen 
+            name="profile" 
+            options={{ 
+              headerShown: false,
+              header: () => null
+            }} 
+          />
         </Stack>
-      </db.SignedIn>
-      <db.SignedOut>
-        <Stack>
+      ) : (
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            header: () => null
+          }}
+        >
           <Stack.Screen 
             name="auth/magic-auth" 
             options={{ 
               headerShown: false,
+              header: () => null,
               title: "Sign In"
             }} 
           />
-          <Stack.Screen name="index" redirect={true} options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="index" 
+            redirect={true} 
+            options={{ 
+              headerShown: false,
+              header: () => null
+            }} 
+          />
         </Stack>
-      </db.SignedOut>
+      )}
       <Toast />
-    </>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    <SafeAreaProvider>
-      <AuthProvider db={db}>
-        <RootLayoutContent />
-      </AuthProvider>
     </SafeAreaProvider>
   );
 }

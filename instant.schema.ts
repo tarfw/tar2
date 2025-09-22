@@ -3,9 +3,6 @@
 import { i } from "@instantdb/react-native";
 
 const _schema = i.schema({
-  // We inferred 4 attributes!
-  // Take a look at this schema, and if everything looks good,
-  // run `push schema` again to enforce the types.
   entities: {
     $files: i.entity({
       path: i.string().unique().indexed(),
@@ -19,11 +16,26 @@ const _schema = i.schema({
       email: i.string().optional(),
       lastLoginAt: i.string().optional(),
       name: i.string().optional(),
-      userId: i.string().unique().indexed().optional(),
       username: i.string().unique().indexed().optional(),
     }),
   },
-  links: {},
+  links: {
+    profile$users: {
+      forward: {
+        on: "profile",
+        has: "one",
+        label: "$users",
+        required: true,
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "one",
+        label: "profile",
+        onDelete: "cascade",
+      },
+    },
+  },
   rooms: {},
 });
 

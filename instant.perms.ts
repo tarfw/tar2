@@ -15,8 +15,10 @@ const rules = {
     allow: {
       view: "auth.id != null && (auth.email == data.email || auth.id == data.userId)",
       create: "auth.id != null && auth.email == data.email",
-      delete: "auth.id != null && (auth.id == data.userId || auth.email == data.email)",
-      update: "auth.id != null && (auth.id == data.userId || auth.email == data.email)",
+      delete:
+        "auth.id != null && (auth.id == data.userId || auth.email == data.email)",
+      update:
+        "auth.id != null && (auth.id == data.userId || auth.email == data.email)",
     },
   },
 } satisfies InstantRules;
