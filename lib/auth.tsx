@@ -4,6 +4,7 @@ import {
   getUserProfileByEmail, 
   initializeNewUser, 
   updateLastLogin,
+  updateUserProfile,
   UserProfile 
 } from './userProfile';
 
@@ -34,19 +35,37 @@ export function AuthProvider({
       try {
         // Get the current authenticated user
         const authResult = await db.getAuth();
+        console.log('Auth result:', authResult);
         if (authResult && authResult.email) {
+          console.log('Authenticated user email:', authResult.email);
           // Set loadingProfile to true while we load the user profile
           setLoadingProfile(true);
           
           // Check if user profile exists
           const profile = await getUserProfileByEmail(authResult.email);
+          console.log('Profile found:', profile);
           
           if (profile) {
-            // Returning user - just set the profile
-            setUserProfile(profile as UserProfile);
+            // Returning user - check if profile has userId
+            if (!profile.userId) {
+              console.log('Profile missing userId, updating...');
+              // Update profile to include userId
+              await updateUserProfile(profile.id!, {
+                userId: authResult.id
+              });
+              // Reload the profile
+              const updatedProfile = await getUserProfileByEmail(authResult.email);
+              setUserProfile(updatedProfile as UserProfile);
+            } else {
+              // Profile already has userId
+              console.log('Profile has userId:', profile.userId);
+              setUserProfile(profile as UserProfile);
+            }
           } else {
             // New user - create profile
+            console.log('No profile found, creating new profile for:', authResult.email);
             const newProfile = await initializeNewUser(authResult.email);
+            console.log('New profile created:', newProfile);
             setUserProfile(newProfile);
           }
           
@@ -54,6 +73,7 @@ export function AuthProvider({
           setLoadingProfile(false);
         } else {
           // No authenticated user, reset the profile
+          console.log('No authenticated user');
           setUserProfile(null);
           setLoadingProfile(false);
         }

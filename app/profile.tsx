@@ -4,33 +4,67 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../lib/auth';
 import { updateUserProfile } from '../lib/userProfile';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function UserProfileScreen() {
   const router = useRouter();
   const { userProfile, signOut, loadingProfile } = useAuth();
   const [name, setName] = useState(userProfile?.name || '');
+  const [username, setUsername] = useState(userProfile?.username || '');
   const [tursoAuthToken, setTursoAuthToken] = useState(userProfile?.tursoCredentials?.authToken || '');
   const [tursoHostname, setTursoHostname] = useState(userProfile?.tursoCredentials?.hostname || '');
   const [tursoDbName, setTursoDbName] = useState(userProfile?.tursoCredentials?.dbName || '');
   const [loading, setLoading] = useState(false);
+  const [usernameSaving, setUsernameSaving] = useState(false);
 
   // Update the state with the loaded profile data when it changes
   useEffect(() => {
     if (userProfile) {
       setName(userProfile.name || '');
+      setUsername(userProfile.username || '');
       setTursoAuthToken(userProfile.tursoCredentials?.authToken || '');
       setTursoHostname(userProfile.tursoCredentials?.hostname || '');
       setTursoDbName(userProfile.tursoCredentials?.dbName || '');
     }
   }, [userProfile]);
 
+  const handleSaveUsername = async () => {
+    if (!userProfile) return;
+    
+    setUsernameSaving(true);
+    try {
+      console.log('Saving username:', username, 'for profile ID:', userProfile.id);
+      await updateUserProfile(userProfile.id!, {
+        username
+      });
+      
+      Alert.alert('Success', 'Username updated successfully');
+    } catch (error: any) {
+      console.error('Error updating username:', error);
+      Alert.alert('Error', error.message || 'Failed to update username');
+    } finally {
+      setUsernameSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!userProfile) return;
     
     setLoading(true);
     try {
+      console.log('Saving profile:', {
+        id: userProfile.id,
+        name,
+        username,
+        tursoCredentials: {
+          authToken: tursoAuthToken,
+          hostname: tursoHostname,
+          dbName: tursoDbName
+        }
+      });
       await updateUserProfile(userProfile.id!, {
         name,
+        username,
         tursoCredentials: {
           authToken: tursoAuthToken,
           hostname: tursoHostname,
@@ -40,6 +74,7 @@ export default function UserProfileScreen() {
       
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error: any) {
+      console.error('Error updating profile:', error);
       Alert.alert('Error', error.message || 'Failed to update profile');
     } finally {
       setLoading(false);
@@ -74,8 +109,7 @@ export default function UserProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>User Profile</Text>
-        <Text style={styles.email}>{userProfile.email}</Text>
+        <Text style={styles.title}>{userProfile.email}</Text>
         {userProfile.lastLoginAt && (
           <Text style={styles.lastLoginText}>
             Last login: {new Date(userProfile.lastLoginAt).toLocaleString()}
@@ -84,6 +118,27 @@ export default function UserProfileScreen() {
       </View>
       
       <View style={styles.form}>
+        <Text style={styles.label}>Username</Text>
+        <View style={styles.inputWithButton}>
+          <TextInput
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Enter your username"
+          />
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSaveUsername}
+            disabled={usernameSaving}
+          >
+            {usernameSaving ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : (
+              <Ionicons name="checkmark" size={24} color="#007AFF" />
+            )}
+          </TouchableOpacity>
+        </View>
+        
         <Text style={styles.label}>Name</Text>
         <TextInput
           style={styles.input}
@@ -149,17 +204,11 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 5,
-  },
-  email: {
-    fontSize: 16,
-    color: '#666',
   },
   lastLoginText: {
     fontSize: 14,
@@ -189,6 +238,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 15,
     fontSize: 16,
+    flex: 1,
+  },
+  inputWithButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  saveButton: {
+    padding: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: '#ddd',
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   button: {
     backgroundColor: '#007AFF',
