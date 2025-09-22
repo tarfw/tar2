@@ -15,6 +15,10 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loadingProfile: boolean;
   loadUserProfile: (email: string) => Promise<void>;
+  requiresUsernameSetup: boolean;
+  checkIfUserHasProfile: (email: string) => Promise<boolean>;
+  checkIfUserHasUsername: (email: string) => Promise<boolean>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +32,9 @@ export function AuthProvider({
 }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState<boolean>(false);
+  const [requiresUsernameSetup, setRequiresUsernameSetup] = useState<boolean>(false);
+  const [userHasProfile, setUserHasProfile] = useState<boolean | null>(null);
+  const [userHasUsername, setUserHasUsername] = useState<boolean | null>(null);
 
   // Load the user profile when the user is authenticated
   useEffect(() => {
@@ -56,10 +63,16 @@ export function AuthProvider({
               // Reload the profile
               const updatedProfile = await getUserProfileByEmail(authResult.email);
               setUserProfile(updatedProfile as UserProfile);
+              
+              // Check if username is required
+              setRequiresUsernameSetup(!updatedProfile?.username);
             } else {
               // Profile already has userId
               console.log('Profile has userId:', profile.userId);
               setUserProfile(profile as UserProfile);
+              
+              // Check if username is required
+              setRequiresUsernameSetup(!profile.username);
             }
           } else {
             // New user - create profile
@@ -67,6 +80,9 @@ export function AuthProvider({
             const newProfile = await initializeNewUser(authResult.email);
             console.log('New profile created:', newProfile);
             setUserProfile(newProfile);
+            
+            // New users always need to set up their username
+            setRequiresUsernameSetup(true);
           }
           
           // Set loadingProfile to false after we've loaded the profile
@@ -76,11 +92,13 @@ export function AuthProvider({
           console.log('No authenticated user');
           setUserProfile(null);
           setLoadingProfile(false);
+          setRequiresUsernameSetup(false);
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
         setUserProfile(null);
         setLoadingProfile(false);
+        setRequiresUsernameSetup(false);
       }
     };
     
@@ -91,6 +109,13 @@ export function AuthProvider({
     try {
       // Try to send the magic code
       await db.auth.sendMagicCode({ email });
+      
+      // Check if user has profile and username for optimization
+      const hasProfile = await checkIfUserHasProfile(email);
+      const hasUsername = await checkIfUserHasUsername(email);
+      
+      setUserHasProfile(hasProfile);
+      setUserHasUsername(hasUsername);
     } catch (error: any) {
       console.error('Error sending magic code:', error);
       // If we get a specific error about the user not existing, we might need to handle it differently
@@ -110,16 +135,7 @@ export function AuthProvider({
     } catch (error: any) {
       console.error('Error signing in with magic code:', error);
       
-      // Check if this is the specific error we're seeing
-      if (error.message && error.message.includes('Record not found: app-user-magic-code')) {
-        // This might be a first-time user issue
-        // Let's try a different approach - create the user first
-        // But InstantDB should handle this automatically
-        // Let's just re-throw the error with a more user-friendly message
-        throw new Error('Invalid magic code or the code has expired. Please request a new code.');
-      }
-      
-      // Handle other errors
+      // Handle all errors with a generic message
       throw new Error(error.body?.message || error.message || 'Failed to sign in with magic code');
     }
   };
@@ -131,6 +147,28 @@ export function AuthProvider({
     } catch (error: any) {
       // Handle error appropriately
       throw new Error(error.body?.message || error.message || 'Failed to sign out');
+    }
+  };
+
+  // Check if a user profile exists for the given email
+  const checkIfUserHasProfile = async (email: string) => {
+    try {
+      const profile = await getUserProfileByEmail(email);
+      return !!profile;
+    } catch (error) {
+      console.error('Error checking if user has profile:', error);
+      return false;
+    }
+  };
+
+  // Check if a user has a username set in their profile
+  const checkIfUserHasUsername = async (email: string) => {
+    try {
+      const profile = await getUserProfileByEmail(email);
+      return !!profile?.username;
+    } catch (error) {
+      console.error('Error checking if user has username:', error);
+      return false;
     }
   };
 
@@ -152,6 +190,22 @@ export function AuthProvider({
     }
   };
 
+  // Refresh the user profile
+  const refreshUserProfile = async () => {
+    try {
+      const authResult = await db.getAuth();
+      if (authResult && authResult.email) {
+        const profile = await getUserProfileByEmail(authResult.email);
+        if (profile) {
+          setUserProfile(profile as UserProfile);
+          setRequiresUsernameSetup(!profile.username);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing user profile:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -160,7 +214,11 @@ export function AuthProvider({
         signOut,
         userProfile,
         loadingProfile,
-        loadUserProfile
+        loadUserProfile,
+        requiresUsernameSetup,
+        checkIfUserHasProfile,
+        checkIfUserHasUsername,
+        refreshUserProfile
       }}
     >
       {children}

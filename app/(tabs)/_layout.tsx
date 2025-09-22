@@ -1,8 +1,17 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useAuth } from "../../lib/auth";
+import { Redirect } from "expo-router";
 
 export default function TabLayout() {
+  const { userProfile, requiresUsernameSetup } = useAuth();
+  
+  // If user needs to set up username, redirect to profile screen
+  if (userProfile && requiresUsernameSetup) {
+    return <Redirect href="/profile" />;
+  }
+  
   return (
     <Tabs
       screenOptions={{

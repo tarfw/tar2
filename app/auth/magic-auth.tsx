@@ -1,28 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { db } from '../../lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { CodeField, Cursor, useBlurOnFulfill, useClearByFocusCell } from 'react-native-confirmation-code-field';
 
 export default function MagicAuthScreen() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email'); // Track current step
   const [loading, setLoading] = useState(false);
+  const [checkingUser, setCheckingUser] = useState(false);
   const router = useRouter();
-  const { sendMagicCode, signInWithMagicCode, loadingProfile } = useAuth();
+  const { sendMagicCode, signInWithMagicCode, loadingProfile, requiresUsernameSetup, checkIfUserHasUsername } = useAuth();
   const { user } = db.useAuth();
   const emailInputRef = useRef<TextInput>(null);
-  const codeInputRef = useRef<TextInput>(null);
-  const isAutoSubmitting = useRef(false);
+  const codeInputRef = useBlurOnFulfill({ value: code, cellCount: 6 });
+  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
+    value: code,
+    setValue: setCode,
+  });
 
   // If user is already authenticated and we're not still loading the profile, redirect to the main app
   useEffect(() => {
     if (user && !loadingProfile) {
-      router.replace('/(tabs)');
+      // Check if user needs to set up their username
+      if (requiresUsernameSetup) {
+        router.replace('/profile');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
-  }, [user, loadingProfile, router]);
+  }, [user, loadingProfile, requiresUsernameSetup, router]);
 
   // Focus on appropriate input when step changes
   useEffect(() => {
@@ -40,39 +51,56 @@ export default function MagicAuthScreen() {
 
   const handleSendMagicCode = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter your email address'
+      });
       return;
     }
 
     setLoading(true);
+    setCheckingUser(true);
     try {
       console.log('Sending magic code to:', email);
       await sendMagicCode(email);
+      
+      // Check if user already has a username for optimization
+      const hasUsername = await checkIfUserHasUsername(email);
+      console.log('User has username:', hasUsername);
+      
       setStep('code');
       setCode(''); // Clear any previous code
-      isAutoSubmitting.current = false; // Reset auto-submit flag
     } catch (error: any) {
       console.error('Error sending magic code:', error);
       const errorMessage = error.body?.message || error.message || 'Failed to send magic code. Please check your email and try again.';
-      Alert.alert('Error', errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage
+      });
     } finally {
       setLoading(false);
+      setCheckingUser(false);
     }
   };
 
   const handleVerifyCode = async () => {
-    if (!code) {
-      Alert.alert('Error', 'Please enter the magic code');
-      return;
-    }
-
-    if (code.length !== 6) {
-      Alert.alert('Error', 'Magic code must be 6 digits');
+    if (!code || code.length !== 6) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter a 6-digit magic code'
+      });
       return;
     }
 
     if (!email) {
-      Alert.alert('Error', 'Email is required');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Email is required'
+      });
       return;
     }
 
@@ -80,43 +108,37 @@ export default function MagicAuthScreen() {
     try {
       console.log('Verifying magic code for:', email, 'Code:', code);
       await signInWithMagicCode(email, code);
-      // Navigation will be handled by InstantDB's SignedIn/SignedOut components
-      // But we also have the useEffect above as a backup
+      
+      // After successful sign in, check if user needs to set up username
+      // This will be handled by the useEffect in the AuthProvider
     } catch (error: any) {
       console.error('Error verifying magic code:', error);
       setCode('');
       
-      // Provide a more user-friendly error message for the specific error we're seeing
-      let errorMessage = error.body?.message || error.message || 'Failed to verify code. Please check the code and try again.';
-      
-      if (errorMessage.includes('Record not found: app-user-magic-code')) {
-        errorMessage = 'Invalid magic code or the code has expired. Please request a new code.';
-      }
-      
-      Alert.alert('Error', errorMessage);
+      // Provide a generic error message
+      const errorMessage = error.body?.message || error.message || 'Failed to verify code. Please check the code and try again.';
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage
+      });
     } finally {
       setLoading(false);
-      isAutoSubmitting.current = false; // Reset auto-submit flag
     }
   };
 
-  // Handle code changes and auto-submit when we have 6 digits
+  // Handle code changes
   const handleCodeChange = (text: string) => {
     setCode(text);
-    
-    // Auto-submit when we have 6 digits and haven't already auto-submitted
-    if (text.length === 6 && !isAutoSubmitting.current) {
-      isAutoSubmitting.current = true; // Set flag to prevent multiple auto-submissions
-      // Use setTimeout to ensure state is updated before submitting
-      setTimeout(() => {
-        handleVerifyCode();
-      }, 100);
-    }
   };
 
   const handleResendCode = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address first');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter your email address first'
+      });
       return;
     }
 
@@ -125,11 +147,19 @@ export default function MagicAuthScreen() {
       console.log('Resending magic code to:', email);
       await sendMagicCode(email);
       setCode(''); // Clear the code field
-      Alert.alert('Success', 'Magic code resent successfully');
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Magic code resent successfully'
+      });
     } catch (error: any) {
       console.error('Error resending magic code:', error);
       const errorMessage = error.body?.message || error.message || 'Failed to resend magic code. Please try again.';
-      Alert.alert('Error', errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage
+      });
     } finally {
       setLoading(false);
     }
@@ -138,9 +168,20 @@ export default function MagicAuthScreen() {
   const handleBackToEmail = () => {
     setStep('email');
     setCode('');
-    isAutoSubmitting.current = false; // Reset auto-submit flag
   };
 
+  // If we're checking if user has username, show loading
+  if (checkingUser) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Checking account...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
   // If user is already authenticated and profile is loaded, show redirecting message
   if (user && !loadingProfile) {
     return (
@@ -210,19 +251,23 @@ export default function MagicAuthScreen() {
               <Text style={styles.title}>Verify Magic Code</Text>
               <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
               
-              <TextInput
+              <CodeField
                 ref={codeInputRef}
-                style={styles.input}
-                placeholder="Magic Code"
+                {...props}
                 value={code}
-                onChangeText={handleCodeChange}
+                onChangeText={setCode}
+                cellCount={6}
+                rootStyle={styles.codeFieldRoot}
                 keyboardType="number-pad"
-                autoCapitalize="none"
-                autoFocus
-                textContentType="oneTimeCode" // iOS only - helps with SMS code autofill
-                maxLength={6} // Magic codes are typically 6 digits
-                returnKeyType="done"
-                onSubmitEditing={handleVerifyCode}
+                textContentType="oneTimeCode"
+                renderCell={({ index, symbol, isFocused }) => (
+                  <Text
+                    key={index}
+                    style={[styles.cell, isFocused && styles.focusCell]}
+                    onLayout={getCellOnLayoutHandler(index)}>
+                    {symbol || (isFocused ? <Cursor /> : null)}
+                  </Text>
+                )}
               />
               
               <TouchableOpacity 
@@ -273,6 +318,17 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 40,
     paddingHorizontal: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   title: {
     fontSize: 24,
@@ -332,5 +388,22 @@ const styles = StyleSheet.create({
   resendText: {
     color: '#007AFF',
     fontWeight: 'bold',
+  },
+  root: { flex: 1, padding: 20 },
+  titleConfirmation: { textAlign: 'center', fontSize: 30 },
+  codeFieldRoot: { marginTop: 20, marginBottom: 20 },
+  cell: {
+    width: 40,
+    height: 40,
+    lineHeight: 38,
+    fontSize: 24,
+    borderWidth: 2,
+    borderColor: '#00000030',
+    textAlign: 'center',
+    marginHorizontal: 5,
+    borderRadius: 8,
+  },
+  focusCell: {
+    borderColor: '#007AFF',
   },
 });

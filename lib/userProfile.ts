@@ -24,7 +24,9 @@ export async function getUserProfileByEmail(email: string) {
   console.log('getUserProfileByEmail - Auth result:', authResult);
   console.log('getUserProfileByEmail - Requested email:', email);
   
-  if (!authResult || authResult.email !== email) {
+  // Only check auth if we have an auth result
+  // This prevents issues right after authentication when auth might be temporarily null
+  if (authResult && authResult.email !== email) {
     // If the authenticated user's email doesn't match the requested email, return null
     console.log('getUserProfileByEmail - Email mismatch, returning null');
     return null;
