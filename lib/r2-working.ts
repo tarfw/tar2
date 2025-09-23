@@ -29,12 +29,12 @@ class WorkingR2Service {
   private readonly secretKey = '8e6d899be792b0bee11201a6c9f6f83f865f2fce9f1ca2c3ff172ad35b5759e2';
 
   // Generate unique file key
-  private generateFileKey(originalName: string | undefined, prefix: string = 'media'): string {
+  private generateFileKey(username: string, originalName: string | undefined, prefix: string = 'media'): string {
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
     const safeName = originalName || `file_${timestamp}`;
     const extension = safeName.split('.').pop() || '';
-    return `${prefix}/${timestamp}-${randomId}.${extension}`;
+    return `${username}/${prefix}/${timestamp}-${randomId}.${extension}`;
   }
 
   // Create AWS v4 signature (simplified version)
@@ -81,7 +81,7 @@ class WorkingR2Service {
       });
 
       // Generate unique key
-      const key = this.generateFileKey(file.name, prefix);
+      const key = this.generateFileKey('user', file.name, prefix);
       console.log('Generated key:', key);
 
       // Read file data

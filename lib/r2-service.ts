@@ -83,7 +83,7 @@ class R2Service {
     });
   }
 
-  async uploadFile(file: MediaFile, prefix: string = 'media'): Promise<UploadResult> {
+  async uploadFile(file: MediaFile, username: string = 'user', prefix: string = 'media'): Promise<UploadResult> {
     // Check client initialization
     if (!this.client) {
       const configValid = validateR2Config();
@@ -104,8 +104,8 @@ class R2Service {
     }
 
     try {
-      // Generate unique key for the file
-      const key = generateFileKey(file.name, prefix);
+      // Generate unique key for the file with username folder structure
+      const key = `${username}/${prefix}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${file.name?.split('.').pop() || ''}`;
       console.log(`[R2Service] Uploading file: ${file.name} (${file.type}, ${file.size} bytes)`);
 
       // Read file content with improved error handling

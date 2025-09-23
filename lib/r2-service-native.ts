@@ -108,7 +108,7 @@ class R2ServiceNative {
     }
 
     try {
-      const key = generateFileKey(file.name, prefix);
+      const key = generateFileKey('user', file.name, prefix);
       console.log("Generated file key:", key);
 
       // Read file data

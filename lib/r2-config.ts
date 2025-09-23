@@ -32,11 +32,11 @@ export const getPublicUrl = (key: string): string => {
   return url;
 };
 
-// Generate unique file key
-export const generateFileKey = (originalName: string | undefined, prefix: string = 'media'): string => {
+// Generate unique file key with username folder structure
+export const generateFileKey = (username: string, originalName: string | undefined, prefix: string = 'media'): string => {
   const timestamp = Date.now();
   const randomId = Math.random().toString(36).substring(2, 15);
   const safeName = originalName || `file_${timestamp}`;
   const extension = safeName.split('.').pop() || '';
-  return `${prefix}/${timestamp}-${randomId}.${extension}`;
+  return `${username}/${prefix}/${timestamp}-${randomId}.${extension}`;
 };

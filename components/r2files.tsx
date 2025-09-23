@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { r2Service, type MediaFile, type UploadResult } from "../lib/r2-service";
 import { Feather } from "@expo/vector-icons";
 import R2Image from "./R2Image";
+import { db } from "../lib/db"; // Import the database to get user info
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -41,6 +42,21 @@ export default function R2Files({ onFileSelect }: DropboxFileManagerProps) {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingPreviews, setLoadingPreviews] = useState<Record<string, boolean>>({});
+  const [username, setUsername] = useState<string>("");
+
+  // Get current user information
+  useEffect(() => {
+    const { user } = db.useAuth();
+    if (user?.username) {
+      setUsername(user.username);
+    } else if (user?.email) {
+      // Use email as fallback if username is not available
+      setUsername(user.email.split("@")[0]);
+    } else {
+      // Default to "user" if no user info is available
+      setUsername("user");
+    }
+  }, []);
 
   // Format file size for display
   const formatFileSize = (bytes: number): string => {
@@ -145,7 +161,7 @@ export default function R2Files({ onFileSelect }: DropboxFileManagerProps) {
         uri: file.uri?.substring(0, 50) + "...",
       });
 
-      const result: UploadResult = await r2Service.uploadFile(file);
+      const result: UploadResult = await r2Service.uploadFile(file, username);
       console.log("Upload result:", result);
 
       if (result.success && result.url && result.key) {
