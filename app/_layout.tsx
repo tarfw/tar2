@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import React, { useEffect, useState } from 'react';
 import { fetchProfileByUserId } from '../lib/profile';
 import Toast from 'react-native-toast-message';
+import { UserProvider } from '../lib/UserContext';
 
 export default function RootLayout() {
   const { isLoading, user } = db.useAuth();
@@ -41,68 +42,70 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      {user ? (
-        <Stack 
-          screenOptions={{
-            headerShown: false,
-            header: () => null
-          }}
-        >
-          {hasProfile === false ? (
-            // User authenticated but no profile - show onboarding
+      <UserProvider>
+        {user ? (
+          <Stack 
+            screenOptions={{
+              headerShown: false,
+              header: () => null
+            }}
+          >
+            {hasProfile === false ? (
+              // User authenticated but no profile - show onboarding
+              <Stack.Screen 
+                name="onboard" 
+                options={{ 
+                  headerShown: false,
+                  header: () => null,
+                  title: "Set Username"
+                }} 
+              />
+            ) : (
+              // User authenticated with profile - show main app
+              <Stack.Screen 
+                name="(tabs)" 
+                options={{ 
+                  headerShown: false,
+                  header: () => null,
+                  title: "Home"
+                }} 
+              />
+            )}
             <Stack.Screen 
-              name="onboard" 
+              name="profile" 
+              options={{ 
+                headerShown: false,
+                header: () => null
+              }} 
+            />
+          </Stack>
+        ) : (
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              header: () => null
+            }}
+          >
+            <Stack.Screen 
+              name="auth/magic-auth" 
               options={{ 
                 headerShown: false,
                 header: () => null,
-                title: "Set Username"
+                title: "Sign In"
               }} 
             />
-          ) : (
-            // User authenticated with profile - show main app
             <Stack.Screen 
-              name="(tabs)" 
+              name="index" 
+              redirect={true} 
               options={{ 
                 headerShown: false,
-                header: () => null,
-                title: "Home"
+                header: () => null
               }} 
             />
-          )}
-          <Stack.Screen 
-            name="profile" 
-            options={{ 
-              headerShown: false,
-              header: () => null
-            }} 
-          />
-        </Stack>
-      ) : (
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            header: () => null
-          }}
-        >
-          <Stack.Screen 
-            name="auth/magic-auth" 
-            options={{ 
-              headerShown: false,
-              header: () => null,
-              title: "Sign In"
-            }} 
-          />
-          <Stack.Screen 
-            name="index" 
-            redirect={true} 
-            options={{ 
-              headerShown: false,
-              header: () => null
-            }} 
-          />
-        </Stack>
-      )}
-      <Toast />
+          </Stack>
+        )}
+        <Toast />
+      </UserProvider>
     </SafeAreaProvider>
   );
 }

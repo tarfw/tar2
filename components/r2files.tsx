@@ -17,6 +17,7 @@ import { r2Service, type MediaFile, type UploadResult } from "../lib/r2-service"
 import { Feather } from "@expo/vector-icons";
 import R2Image from "./R2Image";
 import { db } from "../lib/db";
+import { useUser } from "../lib/UserContext";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -36,6 +37,7 @@ interface DropboxFileManagerProps {
 }
 
 export default function R2Files({ onFileSelect }: DropboxFileManagerProps) {
+  const { userProfile, loading } = useUser();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -138,17 +140,17 @@ export default function R2Files({ onFileSelect }: DropboxFileManagerProps) {
   // Get current username from auth
   const getCurrentUsername = async (): Promise<string> => {
     try {
-      // Get the current user from the database
-      const authResult = await db.auth();
-      if (authResult.user?.username) {
-        return authResult.user.username;
-      } else if (authResult.user?.email) {
+      // Use the userProfile from context if available and has username
+      if (userProfile?.username) {
+        return userProfile.username;
+      } else if (userProfile?.email) {
         // Use email as fallback if username is not available
-        return authResult.user.email.split("@")[0];
-      } else {
-        // Default to "user" if no user info is available
-        return "user";
+        const emailUsername = userProfile.email.split("@")[0];
+        return emailUsername;
       }
+      
+      // Default to "user" if no user info is available
+      return "user";
     } catch (error) {
       console.error("Error getting current user:", error);
       return "user"; // Default fallback
