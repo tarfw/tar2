@@ -1,0 +1,86 @@
+{
+  "expo": {
+    "name": "TAR POS",
+    "slug": "tarapp",
+    "version": "1.0.0",
+    "scheme": "tar-pos",
+    "userInterfaceStyle": "automatic",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "platforms": [
+      "android"
+    ],
+    "android": {
+      "package": "com.wetar5.tarpos",
+      "versionCode": 2,
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "statusBar": {
+        "hidden": false,
+        "style": "dark",
+        "backgroundColor": "#ffffff"
+      },
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
+      }
+    },
+    "web": {
+      "output": "static",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": false,
+          "root": "./src/app"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your products.",
+          "cameraPermission": "The app accesses your camera to let you take photos for your products.",
+          "fileProviderAuthority": "com.wetar5.tarpos.imagepicker.fileprovider"
+        }
+      ],
+      [
+        "expo-file-system",
+        {
+          "requestLegacyExternalStorage": true,
+          "fileProviderAuthority": "com.wetar5.tarpos.fileprovider"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false,
+        "root": "./src/app"
+      },
+      "eas": {
+        "projectId": "65361d62-0cf0-4b51-a401-e312f1ace8e1"
+      }
+    },
+    "owner": "wetar5"
+  }
+}
