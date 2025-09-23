@@ -34,7 +34,7 @@ interface DropboxFileManagerProps {
   onFileSelect?: (file: FileItem) => void;
 }
 
-export default function DropboxFileManager({ onFileSelect }: DropboxFileManagerProps) {
+export default function R2Files({ onFileSelect }: DropboxFileManagerProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);

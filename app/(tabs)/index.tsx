@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import DropboxFileManager from "../../components/DropboxFileManager";
+import R2Files from "../../components/r2files";
 
 const agentsData = [
   { id: "1", name: "Items", icon: "📦" },
@@ -31,7 +31,7 @@ export default function AgentsScreen() {
       // For Files agent, show file management interface
       return (
         <View style={styles.filesContainer}>
-          <DropboxFileManager />
+          <R2Files />
         </View>
       );
     } else {
