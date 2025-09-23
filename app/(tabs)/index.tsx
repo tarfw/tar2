@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import FileManagerSimple from "../../components/FileManagerSimple";
 
 const agentsData = [
-  { id: '1', name: 'Items', icon: '📦' },
-  { id: '2', name: 'Products', icon: '🛍️' },
-  { id: '3', name: 'Orders', icon: '🎈' },
-  { id: '4', name: 'Files', icon: '📁' },
+  { id: "1", name: "Items", icon: "📦" },
+  { id: "2", name: "Products", icon: "🛍️" },
+  { id: "3", name: "Orders", icon: "🎈" },
+  { id: "4", name: "Files", icon: "📁" },
 ];
 
 export default function AgentsScreen() {
@@ -18,7 +19,7 @@ export default function AgentsScreen() {
   // Update selected agent when params change
   useEffect(() => {
     if (params.selectedAgentId) {
-      const agent = agentsData.find(a => a.id === params.selectedAgentId);
+      const agent = agentsData.find((a) => a.id === params.selectedAgentId);
       if (agent) {
         setSelectedAgent(agent);
       }
@@ -26,17 +27,15 @@ export default function AgentsScreen() {
   }, [params]);
 
   const renderAgentContent = () => {
-    if (selectedAgent.name === 'Files') {
-      // For Files agent, show file-specific content
+    if (selectedAgent.name === "Files") {
+      // For Files agent, show file management interface
       return (
-        <View style={styles.content}>
+        <View style={styles.filesContainer}>
           <View style={styles.agentHeader}>
             <Text style={styles.agentIconLarge}>{selectedAgent.icon}</Text>
             <Text style={styles.agentTitle}>{selectedAgent.name}</Text>
           </View>
-          <Text style={styles.placeholderText}>
-            File management interface will be displayed here
-          </Text>
+          <FileManagerSimple />
         </View>
       );
     } else {
@@ -59,14 +58,16 @@ export default function AgentsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Top bar with selected agent */}
       <View style={styles.topBar}>
-        <TouchableOpacity 
-          style={styles.agentsCard} 
-          onPress={() => router.push('/(tabs)/agents-list')}
+        <TouchableOpacity
+          style={styles.agentsCard}
+          onPress={() => router.push("/(tabs)/agents-list")}
         >
-          <Text style={styles.agentsText}>{selectedAgent.icon} {selectedAgent.name}</Text>
+          <Text style={styles.agentsText}>
+            {selectedAgent.icon} {selectedAgent.name}
+          </Text>
         </TouchableOpacity>
       </View>
-      
+
       {/* Main content area showing selected agent data */}
       {renderAgentContent()}
     </SafeAreaView>
@@ -76,33 +77,33 @@ export default function AgentsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   topBar: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   agentsCard: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   agentsText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
   content: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
     padding: 20,
   },
   agentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   agentIconLarge: {
@@ -111,12 +112,15 @@ const styles = StyleSheet.create({
   },
   agentTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   placeholderText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
+  },
+  filesContainer: {
+    flex: 1,
   },
 });
