@@ -9,6 +9,7 @@ export interface Profile {
   createdAt?: string;
   lastLoginAt?: string;
   userId?: string;
+  instantapp?: string; // Added field to store Instant app ID
 }
 
 /**
@@ -40,7 +41,7 @@ export async function fetchProfileByUserId(userId: string) {
 /**
  * Create a new profile for the user
  */
-export async function createProfile(email: string, userId: string, username: string) {
+export async function createProfile(email: string, userId: string, username: string, instantAppId?: string | null) {
   try {
     const profileId = id();
     const newProfile = {
@@ -49,7 +50,8 @@ export async function createProfile(email: string, userId: string, username: str
       username,
       name: '',
       createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString()
+      lastLoginAt: new Date().toISOString(),
+      instantapp: instantAppId || undefined, // Store the Instant app ID if provided, otherwise undefined
     };
     
     console.log('Creating profile:', newProfile);

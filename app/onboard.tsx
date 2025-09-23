@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useRouter } from 'expo-router';
 import { db } from '../lib/db';
 import { createProfile, fetchProfileByUserId } from '../lib/profile';
+import { createInstantApp } from '../lib/instantAppCreation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardScreen() {
@@ -26,8 +27,13 @@ export default function OnboardScreen() {
     
     setLoading(true);
     try {
-      // Create profile with username
-      const result = await createProfile(user.email, user.id, username.trim());
+      // Create Instant app for user
+      console.log('Creating Instant app for user...');
+      const appId = await createInstantApp(username.trim());
+      console.log('Instant app created with ID:', appId);
+      
+      // Create profile with username and store the app ID
+      const result = await createProfile(user.email, user.id, username.trim(), appId || undefined);
       console.log('Profile creation result:', result);
       
       // Verify the profile was created by fetching it
@@ -46,8 +52,8 @@ export default function OnboardScreen() {
       console.log('Navigating to tabs screen');
       router.replace('/(tabs)');
     } catch (error: any) {
-      console.error('Profile creation error:', error);
-      const errorMessage = error.body?.message || error.message || 'Failed to set username';
+      console.error('Onboarding error:', error);
+      const errorMessage = error.body?.message || error.message || 'Failed to complete onboarding';
       Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);

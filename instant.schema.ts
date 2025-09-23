@@ -14,6 +14,7 @@ const _schema = i.schema({
     profile: i.entity({
       createdAt: i.string().optional(),
       email: i.string().optional(),
+      instantapp: i.string().optional(),
       lastLoginAt: i.string().optional(),
       name: i.string().optional(),
       username: i.string().unique().indexed().optional(),
