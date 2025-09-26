@@ -1,8 +1,11 @@
 import { init } from '@instantdb/react-native';
-import Constants from 'expo-constants';
 
-// Using your provided InstantDB app ID
-const APP_ID = '9e8cde29-5ce0-4a73-91c3-0019a469001e';
+// Load InstantDB app ID from environment variables
+const APP_ID = process.env.EXPO_PUBLIC_INSTANT_APP_ID;
+
+if (!APP_ID) {
+  throw new Error('EXPO_PUBLIC_INSTANT_APP_ID is not set in environment variables');
+}
 
 export const db = init({
   appId: APP_ID,
