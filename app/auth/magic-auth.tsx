@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { db } from '../../lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchProfileByUserId } from '../../lib/profile';
+import { storeTenantAppId } from '../../lib/secureStorage';
 
 export default function MagicAuthScreen() {
   const [email, setEmail] = useState('');
@@ -63,14 +64,21 @@ export default function MagicAuthScreen() {
         console.log('Profile check result:', profile);
         
         if (profile) {
-          // User has profile, go directly to main app
-          console.log('User has profile, navigating to tabs');
-          router.replace('/(tabs)');
-        } else {
-          // No profile found, go to onboarding
-          console.log('User has no profile, navigating to onboarding');
-          router.replace('/onboard');
+        // User has profile, retrieve and store tenant app ID
+        console.log('User has profile, retrieving tenant app ID');
+        if (profile.instantapp) {
+          await storeTenantAppId(profile.instantapp);
+          console.log('Tenant app ID retrieved and stored securely');
         }
+        
+        // Go to main app
+        console.log('Navigating to tabs');
+        router.replace('/(tabs)');
+      } else {
+        // No profile found, go to onboarding
+        console.log('User has no profile, navigating to onboarding');
+        router.replace('/onboard');
+      }
       }
     } catch (error: any) {
       console.error('Sign in error:', error);

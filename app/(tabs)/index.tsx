@@ -26,6 +26,19 @@ export default function AgentsScreen() {
     }
   }, [params]);
 
+  const handleAgentSelect = (agent: { id: string; name: string; icon: string }) => {
+    if (agent.name === "Products") {
+      // Navigate to products screen
+      router.push("/(tabs)/products");
+    } else if (agent.name === "Files") {
+      // Files agent stays in this screen
+      setSelectedAgent(agent);
+    } else {
+      // For other agents, update selection but stay in this screen
+      setSelectedAgent(agent);
+    }
+  };
+
   const renderAgentContent = () => {
     if (selectedAgent.name === "Files") {
       // For Files agent, show file management interface
@@ -35,7 +48,7 @@ export default function AgentsScreen() {
         </View>
       );
     } else {
-      // For other agents, show generic content
+      // For other non-Products agents, show generic content
       return (
         <View style={styles.content}>
           <View style={styles.agentHeader}>
@@ -56,7 +69,16 @@ export default function AgentsScreen() {
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.agentsCard}
-          onPress={() => router.push("/(tabs)/agents-list")}
+          onPress={() => {
+            if (selectedAgent.name === "Products") {
+              router.push("/(tabs)/products");
+            } else if (selectedAgent.name === "Files") {
+              // Files component is already rendered here, so no navigation needed
+            } else {
+              // For other agents, go to agents-list to select another
+              router.push("/(tabs)/agents-list");
+            }
+          }}
         >
           <Text style={styles.agentsText}>
             {selectedAgent.icon} {selectedAgent.name}

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { db } from '../lib/db';
 import { createProfile, fetchProfileByUserId } from '../lib/profile';
 import { createInstantApp } from '../lib/instantAppCreation';
+import { storeTenantAppId } from '../lib/secureStorage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardScreen() {
@@ -47,6 +48,12 @@ export default function OnboardScreen() {
       
       // Add a small delay to ensure the profile is fully propagated
       await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Store the tenant app ID securely after profile creation
+      if (appId) {
+        await storeTenantAppId(appId);
+        console.log('Tenant app ID stored securely');
+      }
       
       // On success, navigate to main app
       console.log('Navigating to tabs screen');

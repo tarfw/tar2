@@ -1,18 +1,26 @@
 import { PlatformApi, i } from '@instantdb/platform';
 
-// Load Platform API token from environment variables
-const PLATFORM_TOKEN = process.env.INSTANT_PLATFORM_TOKEN;
+// Platform API will be initialized when needed to avoid early environment variable checks
+let platformApi: PlatformApi | null = null;
 
-if (!PLATFORM_TOKEN) {
-  throw new Error('INSTANT_PLATFORM_TOKEN is not set in environment variables');
+function getPlatformApi(): PlatformApi {
+  if (!platformApi) {
+    const PLATFORM_TOKEN = process.env.EXPO_PUBLIC_INSTANT_PLATFORM_TOKEN;
+    
+    if (!PLATFORM_TOKEN) {
+      throw new Error('EXPO_PUBLIC_INSTANT_PLATFORM_TOKEN is not set in environment variables');
+    }
+
+    // Initialize the Platform API
+    platformApi = new PlatformApi({ 
+      auth: { 
+        token: PLATFORM_TOKEN 
+      } 
+    });
+  }
+  
+  return platformApi;
 }
-
-// Initialize the Platform API
-const platformApi = new PlatformApi({ 
-  auth: { 
-    token: PLATFORM_TOKEN 
-  } 
-});
 
 /**
  * Creates a new Instant app with the given username as the title and predefined schema and permissions
@@ -296,7 +304,7 @@ export async function createInstantApp(username: string): Promise<string | null>
       }
     };
 
-    const appResponse = await platformApi.createApp({ 
+    const appResponse = await getPlatformApi().createApp({ 
       title: username,
       schema: schema,
       perms: perms
