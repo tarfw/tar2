@@ -130,13 +130,44 @@ export async function createInstantApp(username: string): Promise<string | null>
       isActive: i.boolean()
     }),
 
-    staff: i.entity({
+    team: i.entity({
       email: i.string().unique(),
       firstName: i.string(),
       lastName: i.string(),
       role: i.string(),
       pin: i.string().optional(),
       createdAt: i.date()
+    }),
+
+    tasks: i.entity({
+      title: i.string(),
+      description: i.string().optional(),
+      status: i.string(),
+      priority: i.string(),
+      dueDate: i.date().optional(),
+      assignedTo: i.string().optional(),
+      tags: i.json(),
+      createdAt: i.date().indexed(),
+      updatedAt: i.date(),
+      completedAt: i.date().optional(),
+      estimatedHours: i.number().optional(),
+      actualHours: i.number().optional(),
+      progress: i.number().optional()
+    }),
+
+    taskComments: i.entity({
+      taskId: i.string(),
+      authorId: i.string(),
+      content: i.string(),
+      createdAt: i.date().indexed(),
+      updatedAt: i.date()
+    }),
+
+    taskCategories: i.entity({
+      name: i.string(),
+      color: i.string().optional(),
+      createdAt: i.date().indexed(),
+      updatedAt: i.date()
     })
   },
 
@@ -153,9 +184,9 @@ export async function createInstantApp(username: string): Promise<string | null>
       forward: { on: 'locations', has: 'many', label: 'movements' },
       reverse: { on: 'inventoryMovements', has: 'one', label: 'location' }
     },
-    staffMovements: {
-      forward: { on: 'staff', has: 'many', label: 'movements' },
-      reverse: { on: 'inventoryMovements', has: 'one', label: 'staff' }
+    teamMovements: {
+      forward: { on: 'team', has: 'many', label: 'movements' },
+      reverse: { on: 'inventoryMovements', has: 'one', label: 'team' }
     },
     orderLineItems: {
       forward: { on: 'orders', has: 'many', label: 'lineItems' },
@@ -185,13 +216,37 @@ export async function createInstantApp(username: string): Promise<string | null>
       forward: { on: 'stores', has: 'many', label: 'locations' },
       reverse: { on: 'locations', has: 'one', label: 'store' }
     },
-    storeStaff: {
-      forward: { on: 'stores', has: 'many', label: 'staff' },
-      reverse: { on: 'staff', has: 'one', label: 'store' }
+    storeTeam: {
+      forward: { on: 'stores', has: 'many', label: 'team' },
+      reverse: { on: 'team', has: 'one', label: 'store' }
     },
     collectionProducts: {
       forward: { on: 'collections', has: 'many', label: 'products' },
       reverse: { on: 'products', has: 'many', label: 'collections' }
+    },
+    taskComments: {
+      forward: { on: 'tasks', has: 'many', label: 'comments' },
+      reverse: { on: 'taskComments', has: 'one', label: 'task' }
+    },
+    taskCategories: {
+      forward: { on: 'tasks', has: 'many', label: 'categories' },
+      reverse: { on: 'taskCategories', has: 'one', label: 'task' }
+    },
+    teamTasks: {
+      forward: { on: 'team', has: 'many', label: 'tasks' },
+      reverse: { on: 'tasks', has: 'one', label: 'teamMember' }
+    },
+    orderTasks: {
+      forward: { on: 'orders', has: 'many', label: 'tasks' },
+      reverse: { on: 'tasks', has: 'one', label: 'order' }
+    },
+    customerTasks: {
+      forward: { on: 'customers', has: 'many', label: 'tasks' },
+      reverse: { on: 'tasks', has: 'one', label: 'customer' }
+    },
+    productTasks: {
+      forward: { on: 'products', has: 'many', label: 'tasks' },
+      reverse: { on: 'tasks', has: 'one', label: 'product' }
     }
   }
     });
@@ -293,7 +348,34 @@ export async function createInstantApp(username: string): Promise<string | null>
         },
         bind: ['isOwner', 'auth.id != null && auth.id == data.creatorId'],
       },
-      staff: {
+      team: {
+        allow: {
+          view: 'true',
+          create: 'isOwner',
+          update: 'isOwner',
+          delete: 'isOwner',
+        },
+        bind: ['isOwner', 'auth.id != null && auth.id == data.creatorId'],
+      },
+      tasks: {
+        allow: {
+          view: 'true',
+          create: 'isOwner',
+          update: 'isOwner',
+          delete: 'isOwner',
+        },
+        bind: ['isOwner', 'auth.id != null && auth.id == data.creatorId'],
+      },
+      taskComments: {
+        allow: {
+          view: 'true',
+          create: 'isOwner',
+          update: 'isOwner',
+          delete: 'isOwner',
+        },
+        bind: ['isOwner', 'auth.id != null && auth.id == data.creatorId'],
+      },
+      taskCategories: {
         allow: {
           view: 'true',
           create: 'isOwner',
