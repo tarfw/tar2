@@ -3,15 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useRouter } from 'expo-router';
 import { db } from '../../lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchProfileByUserId } from '../../lib/profile';
-import { storeTenantAppId } from '../../lib/secureStorage';
+
+import { storeTenantAppId, getTenantAppId } from '../../lib/secureStorage';
 
 export default function MagicAuthScreen() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [loading, setLoading] = useState(false);
-  const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const router = useRouter();
 
   const handleSendMagicCode = async () => {
@@ -22,11 +21,34 @@ export default function MagicAuthScreen() {
 
     setLoading(true);
     try {
+      // First, check if user already has a profile in the main app
+      // We'll query the profile by email to find their profile information
+      const profileQuery = await db.queryOnce({
+        profile: {
+          $: {
+            where: {
+              email: email
+            }
+          }
+        }
+      });
+      
+      const profile = profileQuery.data.profile[0] || null;
+      
+      if (profile && profile.instantapp) {
+        // User exists with a tenant app, store or update the tenant app ID securely
+        const currentTenantId = await getTenantAppId();
+        if (currentTenantId !== profile.instantapp) {
+          await storeTenantAppId(profile.instantapp);
+          console.log('Found existing user with tenant app ID, stored/updated securely');
+        } else {
+          console.log('Found existing user with existing tenant app ID');
+        }
+      }
+      
       // Send magic code
       await db.auth.sendMagicCode({ email });
       
-      // Check if user already has a profile
-      // We'll do this after sign in, not before
       setStep('code');
       setCode('');
     } catch (error: any) {
@@ -56,29 +78,40 @@ export default function MagicAuthScreen() {
       console.log('Sign in result:', result);
       
       if (result.user?.id) {
-        // Check if user has a profile
-        // Add a small delay to ensure auth state is fully updated
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Check if user has a profile using the user ID
+        // This is a more reliable approach than trying to query by email
+        const profileQuery = await db.queryOnce({
+          profile: {
+            $: {
+              where: {
+                '$users.id': result.user.id
+              }
+            }
+          }
+        });
         
-        const profile = await fetchProfileByUserId(result.user.id);
-        console.log('Profile check result:', profile);
+        const profile = profileQuery.data.profile[0] || null;
         
-        if (profile) {
-        // User has profile, retrieve and store tenant app ID
-        console.log('User has profile, retrieving tenant app ID');
-        if (profile.instantapp) {
-          await storeTenantAppId(profile.instantapp);
-          console.log('Tenant app ID retrieved and stored securely');
+        console.log('Profile existence from user ID check:', !!profile);
+        console.log('Profile from user ID check:', profile);
+        
+        if (profile && profile.instantapp) {
+          // User has profile with tenant app, go directly to main app
+          // The products component will handle switching to tenant app
+          console.log('User has profile with tenant app, navigating to tabs');
+          // Store the tenant app ID if it's not already stored
+          if (profile.instantapp) {
+            const currentTenantId = await getTenantAppId();
+            if (!currentTenantId) {
+              await storeTenantAppId(profile.instantapp);
+            }
+          }
+          router.replace('/(tabs)');
+        } else {
+          // No profile found, go to onboarding
+          console.log('User has no profile, navigating to onboarding');
+          router.replace('/onboard');
         }
-        
-        // Go to main app
-        console.log('Navigating to tabs');
-        router.replace('/(tabs)');
-      } else {
-        // No profile found, go to onboarding
-        console.log('User has no profile, navigating to onboarding');
-        router.replace('/onboard');
-      }
       }
     } catch (error: any) {
       console.error('Sign in error:', error);
@@ -112,7 +145,6 @@ export default function MagicAuthScreen() {
   const handleBackToEmail = () => {
     setStep('email');
     setCode('');
-    setProfileExists(null);
   };
 
   return (

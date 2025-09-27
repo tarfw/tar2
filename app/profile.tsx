@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../lib/db';
+import { removeTenantAppId } from '../lib/secureStorage';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -10,6 +11,9 @@ export default function ProfileScreen() {
 
   const handleSignOut = async () => {
     try {
+      // Clear the tenant app ID from secure storage
+      await removeTenantAppId();
+      
       await db.auth.signOut();
       router.replace('/auth/magic-auth');
     } catch (error) {

@@ -36,16 +36,22 @@ export default function ProductsScreen() {
       try {
         setLoading(true);
         
-        // First, try to get tenant app ID from secure storage
+        // First, get tenant app ID from secure storage
         let tenantAppId = await getTenantAppId();
         
-        // If not in secure storage, try to retrieve from profile
-        if (!tenantAppId && user.id) {
+        // Always verify the tenant app ID from the user's profile in main app
+        if (user.id) {
           const profile = await fetchProfileByUserId(user.id);
           if (profile?.instantapp) {
-            tenantAppId = profile.instantapp;
-            // Store it securely for future use
-            await storeTenantAppId(tenantAppId);
+            // If profile has a different tenant app ID, update our stored value
+            if (profile.instantapp !== tenantAppId) {
+              tenantAppId = profile.instantapp;
+              await storeTenantAppId(tenantAppId);
+              console.log('Tenant app ID updated from profile');
+            }
+          } else if (!tenantAppId) {
+            // If no tenant app ID in profile and none stored, user may need onboarding
+            throw new Error('No tenant app found. Please complete onboarding.');
           }
         }
         
