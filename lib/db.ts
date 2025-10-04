@@ -9,5 +9,4 @@ if (!APP_ID) {
 
 export const db = init({
   appId: APP_ID,
-  // Session persistence is handled automatically by InstantDB
 });

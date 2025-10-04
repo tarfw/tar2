@@ -6,7 +6,6 @@ import R2Files from "../../components/r2files";
 
 const agentsData = [
   { id: "1", name: "Items", icon: "📦" },
-  { id: "2", name: "Products", icon: "🛍️" },
   { id: "3", name: "Orders", icon: "🎈" },
   { id: "4", name: "Files", icon: "📁" },
 ];
@@ -14,7 +13,7 @@ const agentsData = [
 export default function AgentsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [selectedAgent, setSelectedAgent] = useState(agentsData[0]); // Default to first agent
+  const [selectedAgent, setSelectedAgent] = useState(agentsData[0]); // Default to first agent (Items)
 
   // Update selected agent when params change
   useEffect(() => {
@@ -27,10 +26,7 @@ export default function AgentsScreen() {
   }, [params]);
 
   const handleAgentSelect = (agent: { id: string; name: string; icon: string }) => {
-    if (agent.name === "Products") {
-      // Navigate to products screen
-      router.push("/(tabs)/products");
-    } else if (agent.name === "Files") {
+    if (agent.name === "Files") {
       // Files agent stays in this screen
       setSelectedAgent(agent);
     } else {
@@ -48,7 +44,7 @@ export default function AgentsScreen() {
         </View>
       );
     } else {
-      // For other non-Products agents, show generic content
+      // For other agents, show generic content
       return (
         <View style={styles.content}>
           <View style={styles.agentHeader}>
@@ -70,9 +66,7 @@ export default function AgentsScreen() {
         <TouchableOpacity
           style={styles.agentsCard}
           onPress={() => {
-            if (selectedAgent.name === "Products") {
-              router.push("/(tabs)/products");
-            } else if (selectedAgent.name === "Files") {
+            if (selectedAgent.name === "Files") {
               // Files component is already rendered here, so no navigation needed
             } else {
               // For other agents, go to agents-list to select another

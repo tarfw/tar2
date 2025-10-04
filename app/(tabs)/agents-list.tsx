@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const agentsData = [
   { id: '1', name: 'Items', icon: '📦' },
-  { id: '2', name: 'Products', icon: '🛍️' },
   { id: '3', name: 'Orders', icon: '🎈' },
   { id: '4', name: 'Files', icon: '📁' },
 ];

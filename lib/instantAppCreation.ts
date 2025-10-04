@@ -49,6 +49,7 @@ export async function createInstantApp(username: string): Promise<string | null>
       vendor: i.string().optional(),
       tags: i.json(),
       status: i.string(),
+      userId: i.string().indexed(), // Add userId to link product to user
       createdAt: i.date().indexed(),
       updatedAt: i.date()
     }),
@@ -274,7 +275,7 @@ export async function createInstantApp(username: string): Promise<string | null>
           update: 'isOwner',
           delete: 'isOwner',
         },
-        bind: ['isOwner', 'auth.id != null && auth.id == data.creatorId'],
+        bind: ['isOwner', 'auth.id != null && auth.id == data.userId'],
       },
       productVariants: {
         allow: {
